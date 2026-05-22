@@ -16,6 +16,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		28BD27522D7348AAA1DD9336 /* HypertensionGraphView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HypertensionGraphView.swift; sourceTree = "<group>"; };
 		996CD8682E773AD40021963C /* LibreArm.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LibreArm.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9996077A2E77547300929595 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		9996077B2E77547300929595 /* LibreArmApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibreArmApp.swift; sourceTree = "<group>"; };
@@ -23,7 +24,6 @@
 		9996077E2E77547300929595 /* Health.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Health.swift; sourceTree = "<group>"; };
 		999607802E77547300929595 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		999607812E77547300929595 /* LibreArm.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LibreArm.entitlements; sourceTree = "<group>"; };
-		28BD27522D7348AAA1DD9336 /* HypertensionGraphView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HypertensionGraphView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -294,7 +294,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 9R75B5EZBN;
+				DEVELOPMENT_TEAM = 583585KHMH;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
@@ -313,7 +313,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.5.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.ptylr.LibreArm;
+				PRODUCT_BUNDLE_IDENTIFIER = com.chakothechicken.LibreArm;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -335,7 +335,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 9R75B5EZBN;
+				DEVELOPMENT_TEAM = 583585KHMH;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
@@ -354,7 +354,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.5.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.ptylr.LibreArm;
+				PRODUCT_BUNDLE_IDENTIFIER = com.chakothechicken.LibreArm;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";

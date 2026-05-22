@@ -3,7 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject var bp: BPClient
     @EnvironmentObject var health: Health
-    @AppStorage("autoSaveToHealth") private var autoSaveToHealth = true
+    @AppStorage("autoSaveToHealth") private var autoSaveToHealth = false
     @AppStorage("measurementMode") private var measurementModeString = "single"
     @AppStorage("delayBetweenRuns") private var delayBetweenRuns: Double = 30.0
 
@@ -176,12 +176,6 @@ struct ContentView: View {
                 bp.measurementMode = (measurementModeString == "average3") ? .average3 : .single
                 bp.delayBetweenRuns = delayBetweenRuns
 
-                do {
-                    try await health.requestAuth()
-                } catch {
-                    bp.status = "Health permission denied"
-                }
-
                 bp.onFinalReading = { reading in
                     // v1.4.0: Final validation guard before saving to Health
                     guard autoSaveToHealth, bp.isValidReading(reading) else { return }
@@ -195,6 +189,7 @@ struct ContentView: View {
                     }
                 }
 
+                // Start BLE connection
                 bp.startConnect(timeout: 30)
             }
         }

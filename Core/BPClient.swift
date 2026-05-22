@@ -54,6 +54,10 @@ final class BPClient: NSObject, ObservableObject {
     private var sessionActive = false
     private var hasFiredFinal = false
 
+    // Pairing state
+    private var pendingCommand: Data?
+    private var pairingComplete = false
+
     // Connect timeout
     private var connectTimeoutWorkItem: DispatchWorkItem?
     private var connectTimeoutSeconds: TimeInterval = 30
@@ -221,13 +225,22 @@ final class BPClient: NSObject, ObservableObject {
     /// Internal: send the start command to the cuff (assumes BLE characteristics are ready)
     private func performSingleRunStart() {
         guard let p = peripheral, let c = controlChar else { return }
-        p.writeValue(startCommand, for: c, type: .withResponse)
+        pendingCommand = startCommand
+        writeControl(p, characteristic: c, value: startCommand)
+    }
+
+    /// Write to the control characteristic using .withResponse to ensure delivery confirmation.
+    private func writeControl(_ p: CBPeripheral, characteristic c: CBCharacteristic, value: Data) {
+        let type: CBCharacteristicWriteType = c.properties.contains(.write)
+            ? .withResponse : .withoutResponse
+        p.writeValue(value, for: c, type: type)
     }
 
     /// Stop the current measurement without saving a reading.
     func cancelMeasurement() {
         guard let p = peripheral, let c = controlChar else { return }
-        p.writeValue(cancelCommand, for: c, type: .withResponse)
+        pendingCommand = cancelCommand
+        writeControl(p, characteristic: c, value: cancelCommand)
         // Cancel any averaging session
         remainingRuns = 0
         accumulatedReadings.removeAll()
@@ -443,7 +456,12 @@ final class BPClient: NSObject, ObservableObject {
 
 extension BPClient: CBCentralManagerDelegate, CBPeripheralDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        if central.state != .poweredOn {
+        if central.state == .poweredOn {
+            // If we were waiting to scan, start now
+            if !isConnected && peripheral == nil {
+                startConnect(timeout: connectTimeoutSeconds)
+            }
+        } else {
             status = "Bluetooth not available"
             isConnected = false
             canMeasure = false
@@ -485,6 +503,7 @@ extension BPClient: CBCentralManagerDelegate, CBPeripheralDelegate {
         measurementChar = nil
         controlChar = nil
         batteryChar = nil
+        pairingComplete = false
         // v1.4.0: Reset battery state on disconnect
         batteryLevelPct = nil
         batteryStatusLine = "Battery: unavailable"
@@ -506,17 +525,38 @@ extension BPClient: CBCentralManagerDelegate, CBPeripheralDelegate {
         for ch in s.characteristics ?? [] {
             if ch.uuid == measurement {
                 measurementChar = ch
-                p.setNotifyValue(true, for: ch)
+                // Don't subscribe yet — wait for pairing to complete
             } else if ch.uuid == control {
                 controlChar = ch
             } else if ch.uuid == batteryLevel {
-                // v1.4.0: Store battery characteristic and read immediately
                 batteryChar = ch
-                p.readValue(for: ch)
-                // Subscribe to battery notifications if supported
-                if ch.properties.contains(.notify) {
-                    p.setNotifyValue(true, for: ch)
-                }
+                // Don't read/subscribe yet — wait for pairing to complete
+            }
+        }
+
+        // Once we have the control char, trigger pairing by reading it.
+        // This initiates encryption — iOS will show the pairing dialog.
+        if let c = controlChar, !pairingComplete {
+            if c.properties.contains(.read) {
+                status = "Pairing…"
+                p.readValue(for: c)
+            } else {
+                // Not readable — mark pairing done and hope writes work
+                pairingComplete = true
+                finishSetup(for: p)
+            }
+        }
+    }
+
+    /// Called after pairing succeeds — subscribe to notifications and enable measurement.
+    private func finishSetup(for p: CBPeripheral) {
+        if let ch = measurementChar {
+            p.setNotifyValue(true, for: ch)
+        }
+        if let ch = batteryChar {
+            p.readValue(for: ch)
+            if ch.properties.contains(.notify) {
+                p.setNotifyValue(true, for: ch)
             }
         }
         canMeasure = (measurementChar != nil && controlChar != nil)
@@ -525,16 +565,23 @@ extension BPClient: CBCentralManagerDelegate, CBPeripheralDelegate {
 
     func peripheral(_ p: CBPeripheral, didWriteValueFor ch: CBCharacteristic, error: Error?) {
         if let error = error, ch.uuid == control {
-            if ch.properties.contains(.writeWithoutResponse) {
-                p.writeValue(startCommand, for: ch, type: .withoutResponse)
-            } else {
-                status = "Write error: \(error.localizedDescription)"
-                isMeasuring = false
-            }
+            status = "Write error: \(error.localizedDescription)"
+            isMeasuring = false
         }
     }
 
     func peripheral(_ p: CBPeripheral, didUpdateValueFor ch: CBCharacteristic, error: Error?) {
+        if ch.uuid == control {
+            // Control char read completed — pairing succeeded (or wasn't needed)
+            if error == nil {
+                pairingComplete = true
+                finishSetup(for: p)
+            } else {
+                // Pairing failed or was declined
+                status = "Pairing failed — check Bluetooth settings"
+            }
+            return
+        }
         guard error == nil else { status = "Read error"; return }
         if ch.uuid == measurement, let data = ch.value {
             parseBPM(data)

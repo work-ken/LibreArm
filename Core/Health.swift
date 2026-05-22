@@ -1,16 +1,24 @@
 import HealthKit
 
 final class Health: ObservableObject {
-    let store = HKHealthStore()
-
-    func requestAuth() async throws {
-        let s = HKObjectType.quantityType(forIdentifier: .bloodPressureSystolic)!
-        let d = HKObjectType.quantityType(forIdentifier: .bloodPressureDiastolic)!
-        let hr = HKObjectType.quantityType(forIdentifier: .heartRate)!
-        try await store.requestAuthorization(toShare: [s, d, hr], read: [])
-    }
+    private var store: HKHealthStore?
+    private var authorized = false
 
     func saveBP(systolic: Double, diastolic: Double, bpm: Double?, date: Date) async throws {
+        guard HKHealthStore.isHealthDataAvailable() else { return }
+
+        // Lazily create store and request auth on first save
+        if store == nil { store = HKHealthStore() }
+        guard let store = store else { return }
+
+        if !authorized {
+            let s = HKObjectType.quantityType(forIdentifier: .bloodPressureSystolic)!
+            let d = HKObjectType.quantityType(forIdentifier: .bloodPressureDiastolic)!
+            let hr = HKObjectType.quantityType(forIdentifier: .heartRate)!
+            try await store.requestAuthorization(toShare: [s, d, hr], read: [])
+            authorized = true
+        }
+
         let mmHg = HKUnit.millimeterOfMercury()
         let sType = HKQuantityType.quantityType(forIdentifier: .bloodPressureSystolic)!
         let dType = HKQuantityType.quantityType(forIdentifier: .bloodPressureDiastolic)!
